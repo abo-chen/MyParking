@@ -1,19 +1,37 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { BottomNavigation, BottomNavigationTab, Layout, Text } from '@ui-kitten/components';
+import { BottomNavigation, BottomNavigationTab, Icon, Layout, Text } from '@ui-kitten/components';
 
 const { Navigator, Screen } = createBottomTabNavigator();
 
-const UsersScreen = () => (
+const LoginIcon = (props) => (
+  <Icon {...props} name='log-in-outline' />
+);
+
+const ParkingIcon = (props) => (
+  <Icon {...props} name='car-outline' />
+);
+
+const SettingsIcon = (props) => (
+  <Icon {...props} name='settings-outline' />
+);
+
+const LoginScreen = () => (
   <Layout style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text category='h1'>USERS</Text>
+    <Text category='h1'>Login</Text>
   </Layout>
 );
 
-const OrdersScreen = () => (
+const ParkingScreen = () => (
   <Layout style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text category='h1'>ORDERS</Text>
+    <Text category='h1'>Parking</Text>
+  </Layout>
+);
+
+const SettingScreen = () => (
+  <Layout style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    <Text category='h1'>Setting</Text>
   </Layout>
 );
 
@@ -21,15 +39,17 @@ const BottomTabBar = ({ navigation, state }) => (
   <BottomNavigation
     selectedIndex={state.index}
     onSelect={index => navigation.navigate(state.routeNames[index])}>
-    <BottomNavigationTab title='USERS'/>
-    <BottomNavigationTab title='ORDERS'/>
+    <BottomNavigationTab title='Login' icon={LoginIcon}/>
+    <BottomNavigationTab title='Parking' icon={ParkingIcon}/>
+    <BottomNavigationTab title='Setting' icon={SettingsIcon}/>
   </BottomNavigation>
 );
 
 const TabNavigator = () => (
-  <Navigator tabBar={props => <BottomTabBar {...props} />}>
-    <Screen name='Users' component={UsersScreen}/>
-    <Screen name='Orders' component={OrdersScreen}/>
+  <Navigator initialRouteName="Parking" tabBar={props => <BottomTabBar {...props} />}>
+    <Screen name='Login' options={{ headerShown: false }} component={LoginScreen}/>
+    <Screen name='Parking' options={{ headerShown: false }} component={ParkingScreen}/>
+    <Screen name='Setting' options={{ headerShown: false }} component={SettingScreen}/>
   </Navigator>
 );
 
