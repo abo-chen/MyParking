@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BottomNavigation, BottomNavigationTab, Icon, Layout, Text } from '@ui-kitten/components';
+import { SafeAreaView  } from 'react-native';
 
 const { Navigator, Screen } = createBottomTabNavigator();
 
@@ -36,6 +37,7 @@ const SettingScreen = () => (
 );
 
 const BottomTabBar = ({ navigation, state }) => (
+  <SafeAreaView>
   <BottomNavigation
     selectedIndex={state.index}
     onSelect={index => navigation.navigate(state.routeNames[index])}>
@@ -43,6 +45,7 @@ const BottomTabBar = ({ navigation, state }) => (
     <BottomNavigationTab title='Parking' icon={ParkingIcon}/>
     <BottomNavigationTab title='Setting' icon={SettingsIcon}/>
   </BottomNavigation>
+  </SafeAreaView>
 );
 
 const TabNavigator = () => (
@@ -58,3 +61,4 @@ export const AppNavigator = () => (
     <TabNavigator/>
   </NavigationContainer>
 );
+
