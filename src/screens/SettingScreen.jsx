@@ -1,60 +1,73 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Text, Input, Button, Switch } from '@ui-kitten/components';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Switch,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SettingScreen = () => {
-  const [username, setUsername] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [fontSize, setFontSize] = useState("medium");
 
   useEffect(() => {
     const loadSettings = async () => {
-      const storedUsername = await AsyncStorage.getItem('username');
-      const storedNotificationsEnabled = await AsyncStorage.getItem('notificationsEnabled');
+      const storedNotificationsEnabled = await AsyncStorage.getItem("notificationsEnabled");
+      const storedShowAdvancedOptions = await AsyncStorage.getItem("showAdvancedOptions");
+      const storedFontSize = await AsyncStorage.getItem("fontSize");
 
-      setUsername(storedUsername || '');
-      setNotificationsEnabled(storedNotificationsEnabled === 'true');
+      setNotificationsEnabled(storedNotificationsEnabled === "true");
+      setShowAdvancedOptions(storedShowAdvancedOptions === "true");
+      setFontSize(storedFontSize || "medium");
     };
 
     loadSettings();
   }, []);
 
   const saveSettings = async () => {
-    await AsyncStorage.setItem('username', username);
-    await AsyncStorage.setItem('notificationsEnabled', String(notificationsEnabled));
+    await AsyncStorage.setItem("notificationsEnabled", String(notificationsEnabled));
+    await AsyncStorage.setItem("showAdvancedOptions", String(showAdvancedOptions));
+    await AsyncStorage.setItem("fontSize", fontSize);
 
-    console.log('Settings saved:', { username, notificationsEnabled });
+    console.log("Settings saved:", { notificationsEnabled, showAdvancedOptions, fontSize });
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <Layout
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: 30,
-        }}
-      >
-        <Text category="h1">Settings</Text>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 30 }}>
+        <Text style={{ fontSize: 24, fontWeight: "bold" }}>Settings</Text>
 
-        <Input
-          value={username}
-          placeholder="Enter your username"
-          onChangeText={setUsername}
-          style={{ marginVertical: 10 }}
-        />
-
-        <Layout style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
-          <Text category="label">Enable Notifications:</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 10 }}>
+          <Text style={{ fontSize: 18 }}>Enable Notifications</Text>
           <Switch
-            checked={notificationsEnabled}
-            onChange={() => setNotificationsEnabled(!notificationsEnabled)}
+            value={notificationsEnabled}
+            onValueChange={() => setNotificationsEnabled(!notificationsEnabled)}
           />
-        </Layout>
+        </View>
 
-        <Button onPress={saveSettings}>Save Settings</Button>
-      </Layout>
+        <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 10 }}>
+          <Text style={{ fontSize: 18 }}>Show Advanced Options</Text>
+          <Switch
+            value={showAdvancedOptions}
+            onValueChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
+          />
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 10 }}>
+          <Text style={{ fontSize: 18 }}>Font Size</Text>
+          <Text style={{ marginLeft: 10, flex: 1, borderWidth: 1, padding: 8 }}>
+            {fontSize}
+          </Text>
+        </View>
+
+        <TouchableOpacity onPress={saveSettings} style={{ marginTop: 20, padding: 10, backgroundColor: "#007BFF", borderRadius: 5 }}>
+          <Text style={{ color: "white", fontSize: 18 }}>Save Settings</Text>
+        </TouchableOpacity>
+      </View>
     </TouchableWithoutFeedback>
   );
 };
