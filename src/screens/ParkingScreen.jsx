@@ -1,51 +1,94 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, TextInput, FlatList, Text } from "react-native";
-import MapView, { Marker } from "react-native-maps";
-import { SafeAreaView, StatusBar, Platform } from "react-native";
+import { View, StyleSheet, SafeAreaView, StatusBar, Platform } from "react-native";
 import { TouchableWithoutFeedback, Keyboard } from "react-native";
+import MapView, { Marker } from "react-native-maps";
+import { Input, Button } from "@ui-kitten/components";
+import * as Location from "expo-location";
+import Autocomplete from 'react-native-autocomplete-input';
 
 const ParkingScreen = () => {
-  // Mock data for parking spots
-  const [parkingSpots, setParkingSpots] = useState([
-    { id: "1", name: "Spot 1", latitude: 51.0447, longitude: -114.0719 },
-    { id: "2", name: "Spot 2", latitude: 51.045, longitude: -114.072 },
-    { id: "3", name: "Spot 3", latitude: 51.0453, longitude: -114.0721 },
-    { id: "4", name: "Spot 4", latitude: 51.0456, longitude: -114.0722 },
-    { id: "5", name: "Spot 5", latitude: 51.05, longitude: -114.08 },
-  ]);
+  const [address, setAddress] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [region, setRegion] = useState({
+    // SAIT Coordinates
+    latitude: 51.0646, // Replace with SAIT latitude
+    longitude: -114.092, // Replace with SAIT longitude
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+  const [marker, setMarker] = useState(null);
 
-  // useEffect(() => {
-  //   fetch("https://data.calgary.ca/resource/rhkg-vwwp.json")
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       setParkingSpots(data);
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error fetching parking data: ", error);
-  //     });
-  // }, []);
+  const GOOGLE_API_KEY = "AIzaSyBr1m5osWiXLUHXXP5fL5n0_K2oKkWfdPI";
 
-// State for search query
-  const [searchQuery, setSearchQuery] = useState("");
+  const onSearch = async () => {
+    try {
+      console.log(address);
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+          address
+        )}&key=${GOOGLE_API_KEY}`
+      );
+      const data = await response.json();
+      console.log(data);
 
-  // Filter parking spots based on search query
-  const filteredSpots = parkingSpots.filter(
-    (spot) =>
-      typeof spot.name === "string" &&
-      spot.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // 渲染每个停车点作为列表项
-  const renderListItem = ({ item }) => (
-    <Text onPress={() => focusOnMarker(item.latitude, item.longitude)}>
-      {item.name}
-    </Text>
-  );
-
-  // Function to focus on marker when a list item is clicked
-  const focusOnMarker = (latitude, longitude) => {
-    // Logic to focus map on selected marker
+      if (data.status === "OK") {
+        const { lat, lng } = data.results[0].geometry.location;
+        setRegion({
+          latitude: lat,
+          longitude: lng,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+        setMarker({
+          latitude: lat,
+          longitude: lng,
+        });
+      } else {
+        console.log("Geocoding failed: ", data.status);
+      }
+    } catch (error) {
+      console.log("Error during geocoding: ", error);
+    }
   };
+
+  // Function to fetch suggestions based on user input
+  const fetchSuggestions = async (text) => {
+    if (text.length > 0) {
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+            text
+          )}&key=${GOOGLE_API_KEY}`
+        );
+        const data = await response.json();
+        console.log(data);
+        if (data.status === "OK") {
+          const suggestions = data.predictions.map(item => item.description);
+          setSuggestions(suggestions);
+        } else {
+          console.log("Failed to fetch suggestions:", data.status);
+        }
+      } catch (error) {
+        console.log("Error fetching suggestions:", error);
+      }
+    }
+  };
+
+  // Handle suggestion selection
+  const onSuggestionSelect = (suggestion) => {
+    setAddress(suggestion);
+    // Logic to update region based on the selected suggestion
+    // Update marker position
+  };
+  
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        return;
+      }
+    })();
+  }, []);
 
   return (
     <SafeAreaView
@@ -56,43 +99,38 @@ const ParkingScreen = () => {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.container}>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: 51.0447,
-              longitude: -114.0719,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            }}
-          >
-            {parkingSpots.map((spot, index) => {
-              // 确保经纬度值存在且能转换为有效数字
-              const latitude = parseFloat(spot.latitude);
-              const longitude = parseFloat(spot.longitude);
-              if (!isNaN(latitude) && !isNaN(longitude)) {
-                return (
-                  <Marker
-                    key={index}
-                    coordinate={{ latitude, longitude }}
-                    title={spot.name}
-                  />
-                );
-              }
-              return null; // 如果经纬度不合法，不渲染该标记
-            })}
-          </MapView>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Parking..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          <FlatList
-            data={filteredSpots}
-            renderItem={renderListItem}
-            keyExtractor={(item) => item.id}
-            style={styles.list}
-          />
+        <View style={styles.searchRow}>
+            <Input
+              placeholder="Enter an address"
+              value={address}
+              onChangeText={(text) => {
+                setAddress(text);
+                fetchSuggestions(text);
+              }}
+              style={styles.input}
+            />
+            <Button onPress={onSearch}>Search</Button>
+          </View>
+          <View style={styles.autocompleteContainer}>
+            <Autocomplete
+              data={suggestions}
+              defaultValue={address}
+              onChangeText={(text) => {
+                setAddress(text);
+                fetchSuggestions(text);}}
+              renderItem={({ item, i }) => (
+                <TouchableOpacity key={i} onPress={() => onSuggestionSelect(item)}>
+                  <Text style={styles.suggestionItem}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item, index) => index.toString()}
+            />
+          </View>
+          {region && (
+            <MapView style={styles.map} region={region}>
+              {marker && <Marker coordinate={marker} pinColor="blue" />}
+            </MapView>
+          )}
         </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>
@@ -103,26 +141,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  input: {
+    margin: 12,
+  },
   map: {
     flex: 1,
   },
-  searchInput: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    right: 10,
-    padding: 10,
-    backgroundColor: "white",
-    borderRadius: 5,
-    zIndex: 1,
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 12,
   },
-  list: {
-    position: "absolute",
-    top: 50,
-    left: 10,
-    right: 10,
-    backgroundColor: "white",
-    zIndex: 1,
+  autocompleteContainer: {
+    flex: 1,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 1
+  },
+  suggestionItem: {
+    backgroundColor: 'white',
+    padding: 10,
+    fontSize: 18,
+    borderWidth: 0.5,
+    borderColor: '#ccc'
   },
 });
 
