@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { SafeAreaView, StatusBar, Platform } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { Modal, Card, Button, Input, Text } from "@ui-kitten/components";
 import { GOOGLE_API_KEY } from "../../environments";
-
+import MapViewDirections from 'react-native-maps-directions';
 
 const ParkingScreen = () => {
   const [region, setRegion] = useState({
@@ -16,13 +16,13 @@ const ParkingScreen = () => {
   });
   const [startMarker, setStartMarker] = useState(null);
   const [endMarker, setEndMarker] = useState(null);
-
   const [parkingZones, setParkingZones] = useState([]);
-
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedZone, setSelectedZone] = useState(null);
   const [destinationName, setDestinationName] = useState("");
   const [isRouteButtonEnabled, setRouteButtonEnabled] = useState(false);
+  const [shouldShowRoute, setShouldShowRoute] = useState(false);
+  const mapRef = useRef(null);
 
   useEffect(() => {
     fetchParkingZones();
@@ -48,9 +48,7 @@ const ParkingScreen = () => {
     setRegion(newRegion);
 
     if (isStart) {
-      setStartMarker(newRegion);
-    } else {
-      setEndMarker(newRegion);
+      setStartMarker({ latitude: lat, longitude: lng });
     }
   };
 
@@ -69,12 +67,15 @@ const ParkingScreen = () => {
       const endAddress = getEndAddressFromZone(selectedZone);
       setDestinationName(endAddress);
       setRouteButtonEnabled(true);
+      const endCoordinates = selectedZone.line.coordinates[0][0]; // Adjust based on your data
+      setEndMarker({ latitude: endCoordinates[1], longitude: endCoordinates[0] });
     }
   };
 
   const showNavigationRoute = () => {
-    // Logic to display the route
-    // This could involve using a MapViewDirections component or similar approach
+    if (startMarker && endMarker) {
+      setShouldShowRoute(true);
+    }
   };
 
   return (
@@ -122,7 +123,11 @@ const ParkingScreen = () => {
               </Button>
             </View>
           </View>
-          <MapView style={styles.map} region={region}>
+          <MapView 
+            ref={mapRef}
+            style={styles.map} 
+            region={region}
+          >
             {startMarker && <Marker coordinate={startMarker} pinColor="blue" />}
             {endMarker && <Marker coordinate={endMarker} pinColor="red" />}
             {parkingZones.map((zone, index) => {
@@ -130,7 +135,6 @@ const ParkingScreen = () => {
                 latitude: coord[1],
                 longitude: coord[0],
               }));
-
               return (
                 <React.Fragment key={index}>
                   <Polyline
@@ -149,6 +153,21 @@ const ParkingScreen = () => {
                 </React.Fragment>
               );
             })}
+            {shouldShowRoute && startMarker && endMarker && (
+              <MapViewDirections
+                origin={startMarker}
+                destination={endMarker}
+                apikey={GOOGLE_API_KEY}
+                strokeWidth={4}
+                strokeColor="blue"
+                onReady={(result) => {
+                  mapRef.current.fitToCoordinates(result.coordinates, {
+                    edgePadding: { top: 100, right: 50, bottom: 50, left: 50 },
+                    animated: true,
+                  });
+                }}
+              />
+            )}
           </MapView>
         </>
       </TouchableWithoutFeedback>
