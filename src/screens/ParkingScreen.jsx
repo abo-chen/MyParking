@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { SafeAreaView, StatusBar, Platform } from "react-native";
 import { TouchableWithoutFeedback, Keyboard } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, Polyline } from "react-native-maps";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { GOOGLE_API_KEY } from "../../environments";
 
@@ -10,19 +10,36 @@ const ParkingScreen = () => {
   const [region, setRegion] = useState({
     latitude: 51.0646,
     longitude: -114.092,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.025,
   });
   const [startMarker, setStartMarker] = useState(null);
   const [endMarker, setEndMarker] = useState(null);
 
+  const [parkingZones, setParkingZones] = useState([]);
+
+  useEffect(() => {
+    fetchParkingZones();
+  }, []);
+
+  const fetchParkingZones = async () => {
+    try {
+      const response = await fetch(
+        "https://data.calgary.ca/resource/rhkg-vwwp.json"
+      );
+      const data = await response.json();
+      setParkingZones(data);
+    } catch (error) {
+      console.error("Failed to fetch parking zones:", error);
+    }
+  };
+
   const handleSelect = (details, isStart) => {
     const { lat, lng } = details.geometry.location;
     const newRegion = {
+      ...region,
       latitude: lat,
       longitude: lng,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0421,
     };
     setRegion(newRegion);
 
@@ -31,6 +48,11 @@ const ParkingScreen = () => {
     } else {
       setEndMarker(newRegion);
     }
+  };
+
+  const handleMarkerPress = (zone) => {
+    // 处理标记点击事件
+    console.log('Marker pressed', zone);
   };
 
   return (
@@ -66,6 +88,30 @@ const ParkingScreen = () => {
           <MapView style={styles.map} region={region}>
             {startMarker && <Marker coordinate={startMarker} pinColor="blue" />}
             {endMarker && <Marker coordinate={endMarker} pinColor="red" />}
+            {parkingZones.map((zone, index) => {
+              const coordinates = zone.line.coordinates[0].map((coord) => ({
+                latitude: coord[1],
+                longitude: coord[0],
+              }));
+
+              return (
+                <React.Fragment key={index}>
+                  <Polyline
+                    coordinates={coordinates}
+                    strokeColor="green"
+                    strokeWidth={2}
+                  />
+                  <Marker
+                    coordinate={{
+                      latitude: coordinates[0].latitude,
+                      longitude: coordinates[0].longitude,
+                    }}
+                    pinColor="orange"
+                    onPress={() => handleMarkerPress(zone)} // 添加您想要执行的操作
+                  />
+                </React.Fragment>
+              );
+            })}
           </MapView>
         </>
       </TouchableWithoutFeedback>
@@ -80,8 +126,7 @@ const styles = StyleSheet.create({
   },
   Container: {
     flex: 1,
-    width: "70%",
-    paddingLeft: 60,
+    paddingHorizontal: "5%",
   },
   row1: {
     justifyContent: "center",
@@ -93,7 +138,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 1,
     height: 50,
-    
   },
   map: {
     width: "100%",
