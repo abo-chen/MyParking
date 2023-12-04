@@ -38,6 +38,7 @@ const LoginScreen = ({ onLogin }) => {
           style={{ marginVertical: 10 }}
         />
         <Button onPress={handleLogin}>Login</Button>
+        <Text>Use local storage to save the state.</Text>
         <Text>* You can just press Login.</Text>
       </Layout>
     </TouchableWithoutFeedback>
