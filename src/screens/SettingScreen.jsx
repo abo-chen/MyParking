@@ -9,7 +9,13 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const SettingScreen = () => {
+const SettingScreen = ({onLogout}) => {
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("isLoggedIn");
+    onLogout();
+  };
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [fontSize, setFontSize] = useState("medium");
@@ -65,7 +71,13 @@ const SettingScreen = () => {
         </View>
 
         <TouchableOpacity onPress={saveSettings} style={{ marginTop: 20, padding: 10, backgroundColor: "#007BFF", borderRadius: 5 }}>
+      
           <Text style={{ color: "white", fontSize: 18 }}>Save Settings</Text>
+        </TouchableOpacity>
+    
+
+            <TouchableOpacity onPress={handleLogout} style={{ marginTop: 20, padding: 10, backgroundColor: "#FF3B30", borderRadius: 5 }}>
+        <Text style={{ color: "white", fontSize: 18 }}>Logout</Text>
         </TouchableOpacity>
       </View>
     </TouchableWithoutFeedback>
