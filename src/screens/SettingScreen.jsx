@@ -131,7 +131,7 @@ const SettingScreen = ({ onLogout }) => {
         >
           <Text style={{ color: "white", fontSize: 18 }}>Logout</Text>
         </TouchableOpacity>
-        <Text  style={{ color: 'red' }}>*  Click Logout to clear the local storage save point status.</Text>
+        <Text  style={{ color: 'red' }}>* Click Logout to clear the locally stored login status.</Text>
       </View>
     </TouchableWithoutFeedback>
   );
