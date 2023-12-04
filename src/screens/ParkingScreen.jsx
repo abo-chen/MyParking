@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { SafeAreaView, StatusBar, Platform } from "react-native";
-import { TouchableWithoutFeedback, Keyboard } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import { Modal, Card, Button, Input, Text } from "@ui-kitten/components";
 import { GOOGLE_API_KEY } from "../../environments";
-import { Modal, Card, Text, Button } from "@ui-kitten/components";
+
 
 const ParkingScreen = () => {
   const [region, setRegion] = useState({
@@ -21,8 +21,8 @@ const ParkingScreen = () => {
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedZone, setSelectedZone] = useState(null);
-  const [endAddressInput, setEndAddressInput] = useState("");
-
+  const [destinationName, setDestinationName] = useState("");
+  const [isRouteButtonEnabled, setRouteButtonEnabled] = useState(false);
 
   useEffect(() => {
     fetchParkingZones();
@@ -30,9 +30,7 @@ const ParkingScreen = () => {
 
   const fetchParkingZones = async () => {
     try {
-      const response = await fetch(
-        "https://data.calgary.ca/resource/rhkg-vwwp.json"
-      );
+      const response = await fetch("https://data.calgary.ca/resource/rhkg-vwwp.json");
       const data = await response.json();
       setParkingZones(data);
     } catch (error) {
@@ -68,11 +66,15 @@ const ParkingScreen = () => {
   const handleConfirmEndLocation = () => {
     setModalVisible(false);
     if (selectedZone) {
-    const endAddress = getEndAddressFromZone(selectedZone);
-    // Assuming you have a state to hold the end address for GooglePlacesAutocomplete
-    setEndAddressInput(endAddress); 
-    console.log(endAddress);
-  }
+      const endAddress = getEndAddressFromZone(selectedZone);
+      setDestinationName(endAddress);
+      setRouteButtonEnabled(true);
+    }
+  };
+
+  const showNavigationRoute = () => {
+    // Logic to display the route
+    // This could involve using a MapViewDirections component or similar approach
   };
 
   return (
@@ -84,11 +86,11 @@ const ParkingScreen = () => {
             backdropStyle={styles.backdrop}
             onBackdropPress={() => setModalVisible(false)}
           >
-                      <Card disabled={true} style={dialogStyles.card}>
-            <Text>Set this as your destination?</Text>
-            <Button onPress={handleConfirmEndLocation} size='small' style={dialogStyles.button}>Yes</Button>
-            <Button onPress={() => setModalVisible(false)} size='small' style={dialogStyles.button}>No</Button>
-          </Card>
+            <Card disabled={true} style={dialogStyles.card}>
+              <Text>Set this as your destination?</Text>
+              <Button onPress={handleConfirmEndLocation} size='small' style={dialogStyles.button}>Yes</Button>
+              <Button onPress={() => setModalVisible(false)} size='small' style={dialogStyles.button}>No</Button>
+            </Card>
           </Modal>
           <View style={styles.Container}>
             <View style={styles.row1}>
@@ -104,17 +106,20 @@ const ParkingScreen = () => {
               />
             </View>
             <View style={styles.row2}>
-              <GooglePlacesAutocomplete
-                placeholder="Enter end address"
-                fetchDetails
-                query={{
-                  key: GOOGLE_API_KEY,
-                  language: "en",
-                }}
-                onPress={(data, details = null) => handleSelect(details, false)}
-                styles={autocompleteStyles}
-                text={endAddressInput}
+              <Input 
+                placeholder="Select a Parking Zone"
+                value={destinationName}
+                disabled={true}
+                style={styles.input}
               />
+              <Button
+                onPress={showNavigationRoute}
+                disabled={!isRouteButtonEnabled}
+                style={styles.routeButton}
+                size='small'
+              >
+                Nav
+              </Button>
             </View>
           </View>
           <MapView style={styles.map} region={region}>
@@ -139,7 +144,7 @@ const ParkingScreen = () => {
                       longitude: coordinates[0].longitude,
                     }}
                     pinColor="orange"
-                    onPress={() => handleMarkerPress(zone)} // 添加您想要执行的操作
+                    onPress={() => handleMarkerPress(zone)}
                   />
                 </React.Fragment>
               );
@@ -163,13 +168,26 @@ const styles = StyleSheet.create({
   row1: {
     justifyContent: "center",
     zIndex: 2,
-    height: 50,
+    height: 70,
+    marginTop: 10,
+    // borderWidth: 2,
+    // borderColor: "#bfb",
   },
   row2: {
-    flex: 1,
-    justifyContent: "center",
+    flexDirection: "row",
     zIndex: 1,
-    height: 50,
+    height: 40,
+    // borderWidth: 2,
+    // borderColor: "#fbb",
+  },
+  input: {
+    flex: 70,
+    marginRight: 10,
+  },
+  routeButton: {
+    flex: 20,
+    // Add styles for the button as per your design
+
   },
   map: {
     width: "100%",
