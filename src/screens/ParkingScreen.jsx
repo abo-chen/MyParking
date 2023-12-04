@@ -5,6 +5,7 @@ import { TouchableWithoutFeedback, Keyboard } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { GOOGLE_API_KEY } from "../../environments";
+import { Modal, Card, Text, Button } from "@ui-kitten/components";
 
 const ParkingScreen = () => {
   const [region, setRegion] = useState({
@@ -17,6 +18,11 @@ const ParkingScreen = () => {
   const [endMarker, setEndMarker] = useState(null);
 
   const [parkingZones, setParkingZones] = useState([]);
+
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedZone, setSelectedZone] = useState(null);
+  const [endAddressInput, setEndAddressInput] = useState("");
+
 
   useEffect(() => {
     fetchParkingZones();
@@ -51,14 +57,39 @@ const ParkingScreen = () => {
   };
 
   const handleMarkerPress = (zone) => {
-    // 处理标记点击事件
-    console.log('Marker pressed', zone);
+    setSelectedZone(zone);
+    setModalVisible(true);
+  };
+
+  const getEndAddressFromZone = (zone) => {
+    return zone.address_desc; // Or any other field you consider as an address
+  };
+
+  const handleConfirmEndLocation = () => {
+    setModalVisible(false);
+    if (selectedZone) {
+    const endAddress = getEndAddressFromZone(selectedZone);
+    // Assuming you have a state to hold the end address for GooglePlacesAutocomplete
+    setEndAddressInput(endAddress); 
+    console.log(endAddress);
+  }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <>
+          <Modal
+            visible={isModalVisible}
+            backdropStyle={styles.backdrop}
+            onBackdropPress={() => setModalVisible(false)}
+          >
+                      <Card disabled={true} style={dialogStyles.card}>
+            <Text>Set this as your destination?</Text>
+            <Button onPress={handleConfirmEndLocation} size='small' style={dialogStyles.button}>Yes</Button>
+            <Button onPress={() => setModalVisible(false)} size='small' style={dialogStyles.button}>No</Button>
+          </Card>
+          </Modal>
           <View style={styles.Container}>
             <View style={styles.row1}>
               <GooglePlacesAutocomplete
@@ -82,6 +113,7 @@ const ParkingScreen = () => {
                 }}
                 onPress={(data, details = null) => handleSelect(details, false)}
                 styles={autocompleteStyles}
+                text={endAddressInput}
               />
             </View>
           </View>
@@ -143,6 +175,18 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     zIndex: -1,
+  },
+  backdrop: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+});
+
+const dialogStyles = StyleSheet.create({
+  card: {
+    padding: 12,
+  },
+  button: {
+    marginTop: 12,
   },
 });
 
